@@ -2,6 +2,8 @@ package io.train.retrofittraining
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import io.train.retrofittraining.model.Comment
 import io.train.retrofittraining.model.JsonPlaceHolderApi
 import io.train.retrofittraining.model.Post
@@ -20,17 +22,20 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        val gson: Gson = GsonBuilder().serializeNulls().create()
+
         val retrofitBuilder: Retrofit = Retrofit.Builder()
             .baseUrl("https://jsonplaceholder.typicode.com/")
-            .addConverterFactory(GsonConverterFactory.create())
+            .addConverterFactory(GsonConverterFactory.create(gson))
             .build()
 
         jsonPlaceHolderApi = retrofitBuilder.create(JsonPlaceHolderApi::class.java)
 
-        //getPosts()
+//        getPosts()
 //        getComments()
-        createPost()
-
+//        createPost()
+//        updatePost()
+        deletePost()
     }
 
     private fun getPosts() {
@@ -59,7 +64,6 @@ class MainActivity : AppCompatActivity() {
                     content += "Text: ${post.text} \n\n"
 
                     textViewResult.append(content)
-
                 }
             }
 
@@ -98,7 +102,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun createPost() {
-        val post= Post(23, "New Title", "New Text")
+        val post = Post(23, "New Title", "New Text")
         val fields: Map<String, String> = mapOf("userId" to "25", "title" to "New Title")
 
         val call: Call<Post> = jsonPlaceHolderApi!!.createPost(fields)
@@ -128,4 +132,43 @@ class MainActivity : AppCompatActivity() {
         })
     }
 
+    private fun updatePost() {
+        val post = Post(12, null, "New Text")
+
+        val call: Call<Post> = jsonPlaceHolderApi!!.patchPost(5, post)
+
+        call.enqueue(object: Callback<Post> {
+            override fun onFailure(call: Call<Post>, t: Throwable) {
+                textViewResult.append(t.message)
+            }
+
+            override fun onResponse(call: Call<Post>, response: Response<Post>) {
+                val postResponse: Post = response.body()!!
+
+                var content = ""
+                content += "Code " + response.code() + "\n"
+                content += "ID: ${postResponse.id} \n"
+                content += "User ID: ${postResponse.userId} \n"
+                content += "Title: ${postResponse.title} \n"
+                content += "Text: ${postResponse.text} \n\n"
+
+                textViewResult.append(content)            }
+        })
+
+    }
+
+    private fun deletePost() {
+        val call: Call<Unit> = jsonPlaceHolderApi!!.deletePost(5)
+
+        call.enqueue(object : Callback<Unit> {
+            override fun onFailure(call: Call<Unit>, t: Throwable) {
+                textViewResult.append(t.message)
+            }
+
+            override fun onResponse(call: Call<Unit>, response: Response<Unit>) {
+                textViewResult.append("Code ${response.code()}" )
+
+            }
+        })
+    }
 }
