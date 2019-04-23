@@ -21,6 +21,20 @@ interface JsonPlaceHolderApi {
     @GET
     fun getComments(@Url url: String): Call<List<Comment>>
 
+    @POST("posts")
+    fun createPost(@Body post: Post): Call<Post>
 
+    @FormUrlEncoded
+    @POST("posts")
+    fun createPost(
+        @Field("userId") userId: Int,
+        @Field("title") title: String,
+        @Field("body") text: String
+    ): Call<Post>
+
+
+    @FormUrlEncoded
+    @POST("posts")
+    fun createPost(@FieldMap fields:  Map<String, String>): Call<Post>
 
 }

@@ -14,7 +14,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 class MainActivity : AppCompatActivity() {
 
-    private var jsonPlaceHolderApi: JsonPlaceHolderApi? = null
+    var jsonPlaceHolderApi: JsonPlaceHolderApi? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -28,7 +28,8 @@ class MainActivity : AppCompatActivity() {
         jsonPlaceHolderApi = retrofitBuilder.create(JsonPlaceHolderApi::class.java)
 
         //getPosts()
-        getComments()
+//        getComments()
+        createPost()
 
     }
 
@@ -45,6 +46,7 @@ class MainActivity : AppCompatActivity() {
             override fun onResponse(call: Call<List<Post>>, response: Response<List<Post>>) {
                 if(!response.isSuccessful) {
                     textViewResult.text = "Code ${response.code()}"
+                    return
                 }
 
                 val posts = response.body()
@@ -65,9 +67,9 @@ class MainActivity : AppCompatActivity() {
     }
     
     fun getComments() {
-        val callapi = jsonPlaceHolderApi?.getComments("posts/3/comments")
+        val call = jsonPlaceHolderApi?.getComments("posts/3/comments")
 
-        callapi?.enqueue(object : Callback<List<Comment>> {
+        call?.enqueue(object : Callback<List<Comment>> {
             override fun onFailure(call: Call<List<Comment>>, t: Throwable) {
                 textViewResult.text = t.message
             }
@@ -95,5 +97,35 @@ class MainActivity : AppCompatActivity() {
         })
     }
 
+    private fun createPost() {
+        val post= Post(23, "New Title", "New Text")
+        val fields: Map<String, String> = mapOf("userId" to "25", "title" to "New Title")
+
+        val call: Call<Post> = jsonPlaceHolderApi!!.createPost(fields)
+
+        call.enqueue(object: Callback<Post> {
+            override fun onFailure(call: Call<Post>, t: Throwable) {
+                textViewResult.append(t.message)
+            }
+
+            override fun onResponse(call: Call<Post>, response: Response<Post>) {
+                if(!response.isSuccessful) {
+                    textViewResult.text = "Code ${response.code()}"
+                    return
+                }
+
+                val postResponse: Post = response.body()!!
+
+                var content = ""
+                content += "Code " + response.code() + "\n"
+                content += "ID: ${postResponse.id} \n"
+                content += "User ID: ${postResponse.userId} \n"
+                content += "Title: ${postResponse.title} \n"
+                content += "Text: ${postResponse.text} \n\n"
+
+                textViewResult.append(content)
+            }
+        })
+    }
 
 }
