@@ -8,6 +8,10 @@ import io.train.retrofittraining.model.Comment
 import io.train.retrofittraining.model.JsonPlaceHolderApi
 import io.train.retrofittraining.model.Post
 import kotlinx.android.synthetic.main.activity_main.*
+import okhttp3.Interceptor
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -24,18 +28,33 @@ class MainActivity : AppCompatActivity() {
 
         val gson: Gson = GsonBuilder().serializeNulls().create()
 
+        val loggingInterceptor = HttpLoggingInterceptor()
+        loggingInterceptor.level = HttpLoggingInterceptor.Level.BODY
+
+        val okHttpClient = OkHttpClient.Builder()
+            .addInterceptor(Interceptor {
+                val newRequest = it.request().newBuilder()
+                    .header("Interceptro-Header", "xyz")
+                    .build()
+
+                return@Interceptor it.proceed(newRequest)
+            })
+            .addInterceptor(loggingInterceptor)
+            .build()
+
         val retrofitBuilder: Retrofit = Retrofit.Builder()
             .baseUrl("https://jsonplaceholder.typicode.com/")
             .addConverterFactory(GsonConverterFactory.create(gson))
+            .client(okHttpClient)
             .build()
 
         jsonPlaceHolderApi = retrofitBuilder.create(JsonPlaceHolderApi::class.java)
 
-//        getPosts()
+        getPosts()
 //        getComments()
 //        createPost()
 //        updatePost()
-        deletePost()
+//        deletePost()
     }
 
     private fun getPosts() {
@@ -66,7 +85,6 @@ class MainActivity : AppCompatActivity() {
                     textViewResult.append(content)
                 }
             }
-
         })
     }
     
@@ -134,8 +152,9 @@ class MainActivity : AppCompatActivity() {
 
     private fun updatePost() {
         val post = Post(12, null, "New Text")
+        val headers: Map<String, String> = mapOf("Map-Header1" to "def", "Map-Header2" to "ghi")
 
-        val call: Call<Post> = jsonPlaceHolderApi!!.patchPost(5, post)
+        val call: Call<Post> = jsonPlaceHolderApi!!.patchPost(headers, 5, post)
 
         call.enqueue(object: Callback<Post> {
             override fun onFailure(call: Call<Post>, t: Throwable) {
